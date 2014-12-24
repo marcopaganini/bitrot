@@ -80,6 +80,50 @@ func parseFlags() error {
 	return nil
 }
 
+// Load the state database from disk, if it exists
+func loadStateFromFile(d *DirTree) error {
+	cdir, err := stateDir()
+	if err != nil {
+		return err
+	}
+	cfile := filepath.Join(cdir, stateFile(opt.root))
+
+	fi, err := os.Stat(cfile)
+	if err == nil && fi.Mode().IsRegular() {
+		r, err := os.Open(cfile)
+		if err != nil {
+			return err
+		}
+		defer r.Close()
+		err = d.Load(r)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Save state to file
+func saveStateToFile(d *DirTree) error {
+	cdir, err := stateDir()
+	if err != nil {
+		return err
+	}
+	cfile := filepath.Join(cdir, stateFile(opt.root))
+
+	w, err := os.Create(cfile)
+	if err != nil {
+		return err
+	}
+	defer w.Close()
+
+	err = d.Save(w)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func main() {
 	log := logger.New("")
 
@@ -89,38 +133,13 @@ func main() {
 	}
 
 	dt := NewDirTree(opt.root, []*string{})
-
-	// Load DirTree from disk if the right state DB file exists
-	cdir, err := stateDir()
+	err = loadStateFromFile(dt)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Sprintf("Error loading state DB: %q", err))
 	}
-	cfile := filepath.Join(cdir, stateFile(opt.root))
-
-	fi, err := os.Stat(cfile)
-	if err == nil && fi.Mode().IsRegular() {
-		r, err := os.Open(cfile)
-		if err != nil {
-			log.Fatal("Error opening state DB file:", err)
-		}
-		defer r.Close()
-		err = dt.Load(r)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
 	dt.Compare()
-
-	// Save State DB
-	w, err := os.Create(cfile)
+	err = saveStateToFile(dt)
 	if err != nil {
-		log.Fatal("Error creating state DB file:", err)
+		log.Fatal(fmt.Sprintf("Error saving state DB: %q", err))
 	}
-	err = dt.Save(w)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer w.Close()
 }
