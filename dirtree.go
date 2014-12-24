@@ -104,9 +104,21 @@ func (d *DirTree) Compare() error {
 	return nil
 }
 
+// Write a JSON representation of the current DirTree struct
+// to the specified io.Writer.
 func (d *DirTree) Save(writer io.Writer) error {
 	enc := json.NewEncoder(writer)
 	err := enc.Encode(d)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Load a JSON representation of DirTree from the specified io.Reader.
+func (d *DirTree) Load(reader io.Reader) error {
+	enc := json.NewDecoder(reader)
+	err := enc.Decode(d)
 	if err != nil {
 		return err
 	}

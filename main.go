@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	configDirPrefix = ".bitrot"
-	configDirMode   = 640
+	stateDirPrefix = ".bitrot"
+	stateDirMode   = 0770
 )
 
 type cmdLineOpts struct {
@@ -29,31 +29,31 @@ var (
 	opt cmdLineOpts
 )
 
-// Return a unique configuration file based on root path
-func configFile(root string) string {
+// Return a unique state db file based on root path
+func stateFile(root string) string {
 	hd := md5.New()
 	io.WriteString(hd, root)
 	return fmt.Sprintf("bitrot_%x.db", hd.Sum(nil))
 }
 
-// Return a directory for the configuration file. The directory
+// Return a directory for the state database. The directory
 // is created if it doesn't yet exist.
-func configDir() (string, error) {
+func stateDir() (string, error) {
 	usr, err := user.Current()
 	if err != nil {
 		return "", fmt.Errorf("Unable to get information for current user: %q", err)
 	}
-	cdir := filepath.Join(usr.HomeDir, configDirPrefix)
+	cdir := filepath.Join(usr.HomeDir, stateDirPrefix)
 
 	// Create if it doesn't exist
 	fi, err := os.Stat(cdir)
 	if err != nil && !os.IsNotExist(err) {
-		return "", fmt.Errorf("Unable to stat config directory: %q", err)
+		return "", fmt.Errorf("Unable to stat state DB directory: %q", err)
 	}
 	if os.IsNotExist(err) {
-		err := os.Mkdir(cdir, configDirMode)
+		err := os.Mkdir(cdir, stateDirMode)
 		if err != nil {
-			return "", fmt.Errorf("Unable to create config directory: %q", err)
+			return "", fmt.Errorf("Unable to create state DB directory: %q", err)
 		}
 	} else {
 		if !fi.Mode().IsDir() {
@@ -69,7 +69,6 @@ func parseFlags() error {
 	flag.BoolVar(&opt.verbose, "v", false, "Verbose mode (shorthand)")
 	flag.Parse()
 
-	fmt.Println(flag.NArg())
 	if flag.NArg() != 1 {
 		return fmt.Errorf("Use: bitrot [-v|--verbose] directory")
 	}
@@ -89,15 +88,39 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Load DirTree from disk if it already exists
-	cdir, err := configDir()
+	dt := NewDirTree(opt.root, []*string{})
+
+	// Load DirTree from disk if the right state DB file exists
+	cdir, err := stateDir()
 	if err != nil {
 		log.Fatal(err)
 	}
-	cfile := filepath.Join(cdir, configFile(opt.root))
-	fmt.Println("Using cfile", cfile)
+	cfile := filepath.Join(cdir, stateFile(opt.root))
 
-	dt := NewDirTree(opt.root, []*string{})
+	fi, err := os.Stat(cfile)
+	if err == nil && fi.Mode().IsRegular() {
+		r, err := os.Open(cfile)
+		if err != nil {
+			log.Fatal("Error opening state DB file:", err)
+		}
+		defer r.Close()
+		err = dt.Load(r)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	dt.Compare()
-	fmt.Println(configFile(opt.root))
+
+	// Save State DB
+	w, err := os.Create(cfile)
+	if err != nil {
+		log.Fatal("Error creating state DB file:", err)
+	}
+	err = dt.Save(w)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer w.Close()
 }
