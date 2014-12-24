@@ -54,7 +54,6 @@ func (d *DirTree) compareFile(fname string) (string, error) {
 	}
 
 	if memfi, exists = d.Files[fname]; !exists {
-		fmt.Println("DEBUG: Creating new memfi for", fname)
 		// If medatada changed, replace entry silently
 		memfi = &FileInfo{
 			Size:   osinfo.Size(),
@@ -63,18 +62,18 @@ func (d *DirTree) compareFile(fname string) (string, error) {
 			Md5sum: md5sum,
 		}
 		d.Files[fname] = memfi
+		Log.Verbosef(1, "Created new memory entry for %s, md5=%s\n", fname, md5sum)
 	} else {
-		fmt.Println("DEBUG:", fname, "exists in memory")
 		if osinfo.ModTime() != memfi.Mtime || osinfo.Mode() != memfi.Mode || osinfo.Size() != memfi.Size {
 			// Exists: If medatada changed, replace entry silently
-			fmt.Println("DEBUG:", fname, "metadata changes")
+			Log.Verbosef(1, "Metadata changes detected for %s\n", fname)
 			memfi.Size = osinfo.Size()
 			memfi.Mode = osinfo.Mode()
 			memfi.Mtime = osinfo.ModTime()
 			memfi.Md5sum = md5sum
 			d.Files[fname] = memfi
 		} else {
-			fmt.Println("DEBUG:", fname, "NO metadata changes")
+			Log.Verbosef(1, "No metadata changes for %s. Comparing md5sum.", fname)
 			// Exists: No metadata changes. Report md5 differences
 			for k, _ := range md5sum {
 				if memfi.Md5sum[k] != md5sum[k] {

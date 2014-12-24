@@ -25,8 +25,10 @@ type cmdLineOpts struct {
 	verbose bool
 }
 
+// Globals -- Use with care
 var (
-	opt cmdLineOpts
+	Opt cmdLineOpts
+	Log *logger.Logger
 )
 
 // Return a unique state db file based on root path
@@ -65,18 +67,18 @@ func stateDir() (string, error) {
 
 // Parse command-line flags
 func parseFlags() error {
-	flag.BoolVar(&opt.verbose, "verbose", false, "Verbose mode")
-	flag.BoolVar(&opt.verbose, "v", false, "Verbose mode (shorthand)")
+	flag.BoolVar(&Opt.verbose, "verbose", false, "Verbose mode")
+	flag.BoolVar(&Opt.verbose, "v", false, "Verbose mode (shorthand)")
 	flag.Parse()
 
 	if flag.NArg() != 1 {
-		return fmt.Errorf("Use: bitrot [-v|--verbose] directory")
+		usage("Error: Starting directory not specified.")
 	}
 	root, err := filepath.Abs(flag.Arg(0))
 	if err != nil {
 		return fmt.Errorf("Unable to convert root directory \"%s\" to absolute path: %q", flag.Arg(0), err)
 	}
-	opt.root = root
+	Opt.root = root
 	return nil
 }
 
@@ -86,7 +88,7 @@ func loadStateFromFile(d *DirTree) error {
 	if err != nil {
 		return err
 	}
-	cfile := filepath.Join(cdir, stateFile(opt.root))
+	cfile := filepath.Join(cdir, stateFile(Opt.root))
 
 	fi, err := os.Stat(cfile)
 	if err == nil && fi.Mode().IsRegular() {
@@ -109,7 +111,7 @@ func saveStateToFile(d *DirTree) error {
 	if err != nil {
 		return err
 	}
-	cfile := filepath.Join(cdir, stateFile(opt.root))
+	cfile := filepath.Join(cdir, stateFile(Opt.root))
 
 	w, err := os.Create(cfile)
 	if err != nil {
@@ -124,22 +126,38 @@ func saveStateToFile(d *DirTree) error {
 	return nil
 }
 
+// Prints error message and program usage to stderr, exit the program.
+func usage(msg string) {
+	if msg != "" {
+		fmt.Fprintf(os.Stderr, "%s\n\n", msg)
+	}
+	fmt.Fprintf(os.Stderr, "Use: %s [flags] start_dir\n\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "Flags:\n")
+	flag.PrintDefaults()
+	os.Exit(2)
+}
+
+// Good ole main()
 func main() {
-	log := logger.New("")
+	Log = logger.New("")
 
 	err := parseFlags()
 	if err != nil {
-		log.Fatal(err)
+		Log.Fatal(err)
 	}
 
-	dt := NewDirTree(opt.root, []*string{})
+	if Opt.verbose {
+		Log.SetVerboseLevel(1)
+	}
+
+	dt := NewDirTree(Opt.root, []*string{})
 	err = loadStateFromFile(dt)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("Error loading state DB: %q", err))
+		Log.Fatal(fmt.Sprintf("Error loading state DB: %q", err))
 	}
 	dt.Compare()
 	err = saveStateToFile(dt)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("Error saving state DB: %q", err))
+		Log.Fatal(fmt.Sprintf("Error saving state DB: %q", err))
 	}
 }
