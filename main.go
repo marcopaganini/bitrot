@@ -92,6 +92,7 @@ func loadStateFromFile(d *DirTree) error {
 
 	fi, err := os.Stat(cfile)
 	if err == nil && fi.Mode().IsRegular() {
+		Log.Verbosef(1, "Reading state DB from %s\n", cfile)
 		r, err := os.Open(cfile)
 		if err != nil {
 			return err
