@@ -62,7 +62,7 @@ func (d *DirTree) compareFile(fname string) (string, error) {
 			Md5sum: md5sum,
 		}
 		d.Files[fname] = memfi
-		Log.Verbosef(1, "Created new memory entry for %s, md5=%s\n", fname, md5sum)
+		Log.Verbosef(1, "Created new memory entry for %s, md5=%x\n", fname, md5sum)
 	} else {
 		if osinfo.ModTime() != memfi.Mtime || osinfo.Mode() != memfi.Mode || osinfo.Size() != memfi.Size {
 			// Exists: If medatada changed, replace entry silently
