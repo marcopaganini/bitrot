@@ -5,6 +5,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
@@ -106,7 +107,10 @@ func (d *DirTree) Compare() error {
 // Write a JSON representation of the current DirTree struct
 // to the specified io.Writer.
 func (d *DirTree) Save(writer io.Writer) error {
-	enc := json.NewEncoder(writer)
+	zwriter := gzip.NewWriter(writer)
+	defer zwriter.Close()
+
+	enc := json.NewEncoder(zwriter)
 	err := enc.Encode(d)
 	if err != nil {
 		return err
@@ -116,8 +120,14 @@ func (d *DirTree) Save(writer io.Writer) error {
 
 // Load a JSON representation of DirTree from the specified io.Reader.
 func (d *DirTree) Load(reader io.Reader) error {
-	enc := json.NewDecoder(reader)
-	err := enc.Decode(d)
+	zreader, err := gzip.NewReader(reader)
+	if err != nil {
+		return (fmt.Errorf("Error uncompressing state DB: %q", err))
+	}
+	defer zreader.Close()
+
+	dec := json.NewDecoder(zreader)
+	err = dec.Decode(d)
 	if err != nil {
 		return err
 	}

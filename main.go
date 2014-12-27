@@ -17,6 +17,7 @@ import (
 
 const (
 	stateDirPrefix = ".bitrot"
+	stateFileMask  = "bitrot_%x.db.gz"
 	stateDirMode   = 0770
 )
 
@@ -35,7 +36,7 @@ var (
 func stateFile(root string) string {
 	hd := md5.New()
 	io.WriteString(hd, root)
-	return fmt.Sprintf("bitrot_%x.db", hd.Sum(nil))
+	return fmt.Sprintf(stateFileMask, hd.Sum(nil))
 }
 
 // Return a directory for the state database. The directory
