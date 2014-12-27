@@ -63,22 +63,22 @@ func (d *DirTree) compareFile(fname string) (string, error) {
 			Md5sum: md5sum,
 		}
 		d.Files[fname] = memfi
-		Log.Verbosef(1, "Created new memory entry for %s, md5=%x\n", fname, md5sum)
+		Log.Verbosef(1, "[New] %s (%x)\n", fname, md5sum)
 	} else {
 		if osinfo.ModTime() != memfi.Mtime || osinfo.Mode() != memfi.Mode || osinfo.Size() != memfi.Size {
 			// Exists: If medatada changed, replace entry silently
-			Log.Verbosef(1, "Metadata changes detected for %s\n", fname)
+			Log.Verbosef(1, "[Metadata changes] %s (%x)\n", fname, md5sum)
 			memfi.Size = osinfo.Size()
 			memfi.Mode = osinfo.Mode()
 			memfi.Mtime = osinfo.ModTime()
 			memfi.Md5sum = md5sum
 			d.Files[fname] = memfi
 		} else {
-			Log.Verbosef(1, "No metadata changes for %s. Comparing md5sum.", fname)
+			Log.Verbosef(1, "[No metadata changes] %s (%x)", fname, md5sum)
 			// Exists: No metadata changes. Report md5 differences
 			for k, _ := range md5sum {
 				if memfi.Md5sum[k] != md5sum[k] {
-					return fmt.Sprintf("MD5sum mismatch for path: %s", fname), nil
+					return fmt.Sprintf("[MD5 Mismatch] %s (%x -> %x)", fname, memfi.Md5sum, md5sum), nil
 				}
 			}
 		}
@@ -92,12 +92,16 @@ func (d *DirTree) compareFile(fname string) (string, error) {
 func (d *DirTree) Compare() error {
 	filepath.Walk(d.Root, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
-			//fmt.Printf("DEBUG ROOT: Got ERROR %q on %s\n", err, path)
 			return nil
 		}
 		if fi.Mode().IsRegular() {
-			//fmt.Printf("DEBUG ROOT: Sending %s to channel\n", path)
-			d.compareFile(path)
+			msg, err := d.compareFile(path)
+			if err != nil {
+				return (fmt.Errorf("Error comparing file: %s: %q", path, err))
+			}
+			if msg != "" {
+				fmt.Println(msg)
+			}
 		}
 		return nil
 	})
