@@ -42,11 +42,11 @@ func stateFile(root string) string {
 // Return a directory for the state database. The directory
 // is created if it doesn't yet exist.
 func stateDir() (string, error) {
-	usr, err := user.Current()
+	home, err := homeDir()
 	if err != nil {
-		return "", fmt.Errorf("Unable to get information for current user: %q", err)
+		return "", fmt.Errorf("Unable to find home directory for the current user", err)
 	}
-	cdir := filepath.Join(usr.HomeDir, stateDirPrefix)
+	cdir := filepath.Join(home, stateDirPrefix)
 
 	// Create if it doesn't exist
 	fi, err := os.Stat(cdir)
@@ -126,6 +126,31 @@ func saveStateToFile(d *DirTree) error {
 		return err
 	}
 	return nil
+}
+
+// homeDir returns the user's home directory or an error if the variable HOME
+// is not set, or os.user fails, or the directory cannot be found.
+func homeDir() (string, error) {
+	// Get home directory from the HOME environment variable first. If it's
+	// not set, fallback to os.user. This workaround is needed due to:
+	// https://github.com/golang/go/issues/6376
+	home := os.Getenv("HOME")
+	if home == "" {
+		usr, err := user.Current()
+		if err != nil {
+			return "", fmt.Errorf("Unable to get information for current user: %q", err)
+		}
+		home = usr.HomeDir
+	}
+	_, err := os.Stat(home)
+	if os.IsNotExist(err) || !os.ModeType.IsDir() {
+		return "", fmt.Errorf("Home directory %q must exist and be a directory", home)
+	}
+	// Other errors than file not found.
+	if err != nil {
+		return "", err
+	}
+	return home, nil
 }
 
 // Prints error message and program usage to stderr, exit the program.
