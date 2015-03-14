@@ -15,6 +15,7 @@ import (
 	"time"
 )
 
+// FileInfo holds file metadata about each file in the filesystem.
 type FileInfo struct {
 	Size   int64
 	Mode   os.FileMode
@@ -22,13 +23,15 @@ type FileInfo struct {
 	Md5sum []byte
 }
 
+// DirTree contains the metadata information about all files in a given
+// mountpoint.
 type DirTree struct {
 	Root      string
 	ExcludeRe []*string
 	Files     map[string]*FileInfo
 }
 
-// Return a new DirTree object.
+// NewDirTree creates a new DirTree struct.
 func NewDirTree(root string, excludeRe []*string) *DirTree {
 	dt := &DirTree{
 		Root:      root,
@@ -76,7 +79,7 @@ func (d *DirTree) compareFile(fname string) (string, error) {
 		} else {
 			Log.Verbosef(1, "[No metadata changes] %s (%x)", fname, md5sum)
 			// Exists: No metadata changes. Report md5 differences
-			for k, _ := range md5sum {
+			for k := range md5sum {
 				if memfi.Md5sum[k] != md5sum[k] {
 					return fmt.Sprintf("[MD5 Mismatch] %s (%x -> %x)", fname, memfi.Md5sum, md5sum), nil
 				}
@@ -86,9 +89,10 @@ func (d *DirTree) compareFile(fname string) (string, error) {
 	return "", nil
 }
 
-// Compare files in the DirTree to the files on disk. Adds new files found on
-// disk to DirTree and replace Files with changed attributes. Report in case a
-// file exists with the exact same attributes but different checksum.
+// Compare compares all files in the DirTree to the files on disk. Adds new
+// files found on disk to DirTree and replace Files with changed attributes.
+// Report in case a file exists with the exact same attributes but different
+// checksum.
 func (d *DirTree) Compare() error {
 	filepath.Walk(d.Root, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
@@ -108,8 +112,8 @@ func (d *DirTree) Compare() error {
 	return nil
 }
 
-// Write a JSON representation of the current DirTree struct
-// to the specified io.Writer.
+// Save writes a JSON representation of the current DirTree struct to the
+// specified io.Writer.
 func (d *DirTree) Save(writer io.Writer) error {
 	zwriter := gzip.NewWriter(writer)
 	defer zwriter.Close()
