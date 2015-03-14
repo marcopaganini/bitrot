@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	version        = "1.0.0"
 	stateDirPrefix = ".bitrot"
 	stateFileMask  = "bitrot_%x.db.gz"
 	stateDirMode   = 0770
@@ -24,6 +25,7 @@ const (
 type cmdLineOpts struct {
 	root    string
 	verbose bool
+	version bool
 }
 
 // Globals -- Use with care
@@ -68,9 +70,15 @@ func stateDir() (string, error) {
 
 // Parse command-line flags
 func parseFlags() error {
+	flag.BoolVar(&Opt.version, "version", false, "Display version")
 	flag.BoolVar(&Opt.verbose, "verbose", false, "Verbose mode")
 	flag.BoolVar(&Opt.verbose, "v", false, "Verbose mode (shorthand)")
 	flag.Parse()
+
+	if Opt.version {
+		fmt.Println(version)
+		os.Exit(0)
+	}
 
 	if flag.NArg() != 1 {
 		usage("Error: Starting directory not specified.")
@@ -172,7 +180,6 @@ func main() {
 	if err != nil {
 		Log.Fatal(err)
 	}
-
 	if Opt.verbose {
 		Log.SetVerboseLevel(1)
 	}
