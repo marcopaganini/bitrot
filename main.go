@@ -178,7 +178,7 @@ func main() {
 
 	err := parseFlags()
 	if err != nil {
-		Log.Fatal(err)
+		Log.Fatalln(err)
 	}
 	if Opt.verbose {
 		Log.SetVerboseLevel(1)
@@ -187,11 +187,11 @@ func main() {
 	dt := NewDirTree(Opt.root, []*string{})
 	err = loadStateFromFile(dt)
 	if err != nil {
-		Log.Fatal(fmt.Sprintf("Error loading state DB: %q", err))
+		Log.Fatalln(fmt.Sprintf("Error loading state DB: %q", err))
 	}
 	dt.Compare()
 	err = saveStateToFile(dt)
 	if err != nil {
-		Log.Fatal(fmt.Sprintf("Error saving state DB: %q", err))
+		Log.Fatalln(fmt.Sprintf("Error saving state DB: %q", err))
 	}
 }
