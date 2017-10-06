@@ -46,7 +46,7 @@ func stateFile(root string) string {
 func stateDir() (string, error) {
 	home, err := homeDir()
 	if err != nil {
-		return "", fmt.Errorf("Unable to find home directory for the current user", err)
+		return "", fmt.Errorf("unable to find home directory for the current user: %v", err)
 	}
 	cdir := filepath.Join(home, stateDirPrefix)
 
@@ -62,7 +62,7 @@ func stateDir() (string, error) {
 		}
 	} else {
 		if !fi.Mode().IsDir() {
-			return "", fmt.Errorf("A non-directory named %s already exists.", cdir)
+			return "", fmt.Errorf("a non-directory named %s already exists", cdir)
 		}
 	}
 	return cdir, nil
