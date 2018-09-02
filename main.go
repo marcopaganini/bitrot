@@ -8,11 +8,12 @@ import (
 	"crypto/md5"
 	"flag"
 	"fmt"
-	"github.com/marcopaganini/logger"
 	"io"
 	"os"
 	"os/user"
 	"path/filepath"
+
+	"github.com/marcopaganini/logger"
 )
 
 const (
