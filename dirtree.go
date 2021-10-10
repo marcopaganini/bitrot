@@ -77,7 +77,7 @@ func (d *DirTree) compareFile(fname string) (string, error) {
 			memfi.Md5sum = md5sum
 			d.Files[fname] = memfi
 		} else {
-			Log.Verbosef(1, "[No metadata changes] %s (%x)", fname, md5sum)
+			Log.Verbosef(1, "[No metadata changes] %s (%x)\n", fname, md5sum)
 			// Exists: No metadata changes. Report md5 differences
 			for k := range md5sum {
 				if memfi.Md5sum[k] != md5sum[k] {
