@@ -16,8 +16,10 @@ import (
 	"github.com/marcopaganini/logger"
 )
 
+// This is filled by go build -ldflags during build.
+var Build string
+
 const (
-	version        = "1.0.0"
 	stateDirPrefix = ".bitrot"
 	stateFileMask  = "bitrot_%x.db.gz"
 	stateDirMode   = 0770
@@ -77,7 +79,7 @@ func parseFlags() error {
 	flag.Parse()
 
 	if Opt.version {
-		fmt.Println(version)
+		fmt.Printf("bitrot build: %s\n", Build)
 		os.Exit(0)
 	}
 
