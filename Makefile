@@ -4,11 +4,11 @@ bin := bitrot
 bindir := /usr/local/bin
 archdir := arch
 src := $(wildcard *.go)
-git_tag := $(shell git describe --tags)
+git_tag := $(shell git describe --always --tags)
 
 # Default target
 ${bin}: Makefile ${src}
-	go build -v -ldflags "-X main.Build=${git_tag}" -o "${bin}"
+	go build -v -ldflags "-X main.BuildVersion=${git_tag}" -o "${bin}"
 
 clean:
 	rm -f "${bin}"

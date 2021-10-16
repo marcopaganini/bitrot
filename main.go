@@ -16,8 +16,8 @@ import (
 	"github.com/marcopaganini/logger"
 )
 
-// This is filled by go build -ldflags during build.
-var Build string
+// BuildVersion is filled by go build -ldflags during build.
+var BuildVersion string
 
 const (
 	stateDirPrefix = ".bitrot"
@@ -79,7 +79,7 @@ func parseFlags() error {
 	flag.Parse()
 
 	if Opt.version {
-		fmt.Printf("bitrot build: %s\n", Build)
+		fmt.Printf("bitrot build: %s\n", BuildVersion)
 		os.Exit(0)
 	}
 
